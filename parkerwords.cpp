@@ -1,11 +1,13 @@
+#include <bit>
 #include <ctime>
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <format>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <array>
 
 using uint = unsigned int;
 
@@ -51,7 +53,7 @@ using OutputFn = std::function<void(const WordArray&)>;
 
 time_t start;
 
-int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, size_t maxLetter, bool skipped)
+int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, uint maxLetter, bool skipped)
 {
 	if (numwords == 5)
 	{
@@ -79,7 +81,7 @@ int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, 
 			numsolutions += findwords(output, totalbits | w, numwords + 1, newwords, i + 1, skipped);
 
 			if (numwords == 0)
-				std::cout << std::format("\33[2K\rFound {} solutions. Running time: {}s", numsolutions, time(0) - start);
+				std::cout << "\33[2K\rFound " << numsolutions << " solutions. Running time: " << time(0) - start << "s";
 		}
 
         if (skipped)
@@ -100,7 +102,7 @@ int main()
 {
     start = time(0);
     readwords("words_alpha.txt");
-    std::cout << std::format("{} unique words\n", wordbits.size());
+    std::cout << wordbits.size() << "unique words\n";
     std::ofstream out("solutions.txt");
     int num = findwords([&](const WordArray& words)
         {
