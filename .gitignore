@@ -1,0 +1,11 @@
+*.obj
+*.pch
+*.dll
+*.lib
+*.exe
+*.vcxproj.user
+*.idb
+x64/*
+Debug/*
+.vs/*
+solutions.txt
