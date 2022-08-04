@@ -12,6 +12,7 @@ using uint = unsigned int;
 std::vector<uint> wordbits;
 std::vector<std::vector<std::string>> wordanagrams;
 std::unordered_map<uint, size_t> bitstoindex;
+std::vector<uint> letterindex[26];
 
 uint getbits(std::string_view word)
 {
@@ -38,48 +39,66 @@ void readwords(const char* file)
             bitstoindex[bits] = wordbits.size();
             wordbits.push_back(bits);
             wordanagrams.push_back({ line });
+
+            uint lowestLetter = std::countr_zero(bits);
+            letterindex[lowestLetter].push_back(bits);
         }
     }
 }
 
 using WordArray = std::array<size_t, 5>;
 using OutputFn = std::function<void(const WordArray&)>;
-int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, size_t maxId, time_t start)
+
+time_t start;
+
+int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, size_t maxLetter, bool skipped)
 {
-    if (numwords == 5)
+	if (numwords == 5)
 	{
-        output(words);
+		output(words);
 		return 1;
 	}
 
-    int numsolutions = 0;
-    size_t max = wordbits.size();
+	int numsolutions = 0;
+	size_t max = wordbits.size();
 	WordArray newwords = words;
 
-    for (size_t idx = maxId; idx < max; idx++)
-    {
-        uint w = wordbits[idx];
-        if (totalbits & w)
+	for (uint i = maxLetter; i < 26; i++)
+	{
+        uint m = 1 << i;
+        if (totalbits & m)
             continue;
 
-        if (numwords == 0)
-            std::cout << std::format("\33[2K\r{} / {} ({}%). Found {} solutions. Running time: {}s", idx, max, 100 * idx / max, numsolutions, std::time(0) - start);
+        for (uint w : letterindex[i])
+		{
+			if (totalbits & w)
+				continue;
 
-        newwords[numwords] = idx;
-        numsolutions += findwords(output, totalbits | w, numwords + 1, newwords, idx + 1, start);
-    }
+			size_t idx = bitstoindex[w];
+			newwords[numwords] = idx;
+			numsolutions += findwords(output, totalbits | w, numwords + 1, newwords, i + 1, skipped);
 
-    return numsolutions;
+			if (numwords == 0)
+				std::cout << std::format("\33[2K\rFound {} solutions. Running time: {}s", numsolutions, time(0) - start);
+		}
+
+        if (skipped)
+            break;
+        skipped = true;
+	}
+
+	return numsolutions;
 }
 
 int findwords(OutputFn output)
 {
     WordArray words = { };
-    return findwords(output, 0, 0, words, 0, std::time(0));
+    return findwords(output, 0, 0, words, 0, false);
 }
 
 int main()
 {
+    start = time(0);
     readwords("words_alpha.txt");
     std::cout << std::format("{} unique words\n", wordbits.size());
     std::ofstream out("solutions.txt");
