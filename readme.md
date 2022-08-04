@@ -5,7 +5,7 @@ To compile, either open parkerwords.sln in VS 2019 or later, or compile parkerwo
 It takes 7 seconds to run on my AMD Ryzen 5800X, and finds all the 538 solutions mentioned in the video. Result is written to solutions.txt.
 
 ## Description
-The algorithm handles words as bitsets stored in a 32-bit integer, where each bit position represents the inclusion of that letter in the word, with 'a' being bit 0, 'b' bit 1, and so forth, up to 26 bits in total. Using a bitwise AND, we can quickly check if two wods have overlapping letters.
+The algorithm handles words as bitsets stored in a 32-bit integer, where each bit position represents the inclusion of that letter in the word, with 'a' being bit 0, 'b' bit 1, and so forth, up to 26 bits in total. Using a bitwise AND, we can quickly check if two words have overlapping letters, which would then give a non-zero result.
 
 Furthermore, it uses an index to quickly look up a list of words containing a certain letter. By leveraging the fact that the algorithm looks for the letters in order, we only need to store each word in the index once; with it's lowest letter as the index. E.g., 'abcde' is stored in the list of 'a' and 'rjhew' is stored in the list of 'e'.
 
