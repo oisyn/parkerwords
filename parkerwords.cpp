@@ -11,6 +11,17 @@
 #include <array>
 #include <chrono>
 
+// uncomment this line to write info to stdout, which takes away precious CPU time
+#define NO_OUTPUT
+
+
+#ifdef NO_OUTPUT
+#define OUTPUT(x) do;while(false)
+#else
+#define OUTPUT(x) do{x;}while(false)
+#endif
+
+
 using uint = unsigned int;
 
 std::vector<uint> wordbits;
@@ -121,8 +132,7 @@ int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, 
 			newwords[numwords] = idx;
 			numsolutions += findwords(output, totalbits | w, numwords + 1, newwords, i + 1, skipped);
 
-			if (numwords == 0)
-				std::cout << "\33[2K\rFound " << numsolutions << " solutions. Running time: " << (timeUS() - start) << "us";
+			OUTPUT(if (numwords == 0) std::cout << "\33[2K\rFound " << numsolutions << " solutions. Running time: " << (timeUS() - start) << "us");
 		}
 
         if (skipped)
@@ -144,11 +154,13 @@ int main()
     start = timeUS();
     readwords("words_alpha.txt");
 
-    std::cout << wordbits.size() << " unique words\n";
-	std::cout << "letter order: ";
-	for (int i = 0; i < 26; i++)
-		std::cout << char('a' + letterorder[i]);
-	std::cout << "\n";
+    OUTPUT(
+        std::cout << wordbits.size() << " unique words\n";
+	    std::cout << "letter order: ";
+	    for (int i = 0; i < 26; i++)
+		    std::cout << char('a' + letterorder[i]);
+	    std::cout << "\n";
+    );
 
     std::ofstream out("solutions.txt");
     int num = findwords([&](const WordArray& words)
@@ -157,7 +169,10 @@ int main()
                 out << wordanagrams[idx][0] << "\t";
             out << "\n";
         });
-	std::cout << "\nsolutions.txt written.\n";
-    long long time = timeUS() - start;
+
+	OUTPUT(std::cout << "\n");
+
+	long long time = timeUS() - start;
+	std::cout << num << " solutions written to solutions.txt.\n";
     std::cout << "Total time: " << time << "us (" << time / 1.e6f << "s)\n";
 }
