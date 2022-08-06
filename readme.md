@@ -7,7 +7,7 @@ It takes 7 seconds to run on my AMD Ryzen 5800X, and finds all the 538 solutions
 ## Description
 The algorithm handles words as bitsets stored in a 32-bit integer, where each bit position represents the inclusion of that letter in the word, with 'a' being bit 0, 'b' bit 1, and so forth, up to 26 bits in total. Using a bitwise AND, we can quickly check if two words have overlapping letters, which would then give a non-zero result.
 
-Furthermore, it uses an index to quickly look up a list of words containing a certain letter. By leveraging the fact that the algorithm looks for the letters in a certain order, we only need to store each word in the index once; with it's lowest ordered letter as the index. To determine the order of the letters, the frequency of each letter is recorded and the order of letters is from least to most frequently used letter (in the English language, these are typically 'q' for least and 'a' for the most used letter).
+Furthermore, it uses an index to quickly look up a list of words containing a certain letter. By leveraging the fact that the algorithm looks for the letters in a certain order, we only need to store each word in the index once; with it's lowest ordered letter as the index. To determine the order of the letters, the frequency of each letter is recorded and the order of letters is from least to most frequently used letter (using this dataset, it produces the order: "qxjzvfwbkgpmhdcytlnuroisea").
 
 As there are 26 letters in the English alphabet, and we're looking for a list of 5 words, only one letter remains unused. The algorithm is therefore only allowed to skip a single letter.
 
