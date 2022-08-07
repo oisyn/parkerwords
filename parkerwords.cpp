@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <cstdio>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <functional>
 #include <algorithm>
@@ -25,10 +26,27 @@
 using uint = unsigned int;
 
 std::vector<uint> wordbits;
-std::vector<std::vector<std::string>> wordanagrams;
+std::vector<std::string> words;
 std::unordered_map<uint, size_t> bitstoindex;
 std::vector<uint> letterindex[26];
 uint letterorder[26];
+
+std::string_view getword(const char*& _str, const char* end)
+{
+    const char* str = _str;
+    while(*str == '\n' || *str == '\r')
+	{
+		if (++str == end)
+            return (_str = str), std::string_view{};
+	}
+
+    const char* start = str;
+    while(str != end && *str != '\n' && *str != '\r')
+        ++str;
+
+    _str = str;
+    return std::string_view{ start, str };
+}
 
 uint getbits(std::string_view word)
 {
@@ -45,15 +63,23 @@ void readwords(const char* file)
 		freq[i].l = i;
 
     // open file
+    std::vector<char> buf;
     std::ifstream in(file);
-    std::string line;
+    in.seekg(0, std::ios::end);
+    buf.resize(in.tellg());
+    in.seekg(0, std::ios::beg);
+    in.read(&buf[0], buf.size());
+
+    const char* str = &buf[0];
+	const char* strEnd = str + buf.size();
 
     // read words
-    while(std::getline(in, line))
+    std::string_view word;
+    while(!(word = getword(str, strEnd)).empty())
     {
-        if (line.size() != 5)
+        if (word.size() != 5)
             continue;
-        uint bits = getbits(line);
+        uint bits = getbits(word);
         if (std::popcount(bits) != 5)
             continue;
 
@@ -61,10 +87,10 @@ void readwords(const char* file)
         {
             bitstoindex[bits] = wordbits.size();
             wordbits.push_back(bits);
-            wordanagrams.push_back({ line });
+            words.emplace_back(word);
 
             // count letter frequency
-            for(char c: line)
+            for(char c: word)
                 freq[c - 'a'].f++;
         }
     }
@@ -83,30 +109,30 @@ void readwords(const char* file)
     {
         uint m = w;
 		uint letter = std::countr_zero(m);
-        m -= 1 << letter;
         uint min = reverseletterorder[letter];
+		m &= m - 1; // drop lowest set bit
         while(m)
         {
             letter = std::countr_zero(m);
-			m -= 1 << letter;
             min = std::min(min, reverseletterorder[letter]);
+			m &= m - 1;
 		}
 
         letterindex[min].push_back(w);
     }
 }
 
-using WordArray = std::array<size_t, 5>;
+using WordArray = std::array<uint, 5>;
 using OutputFn = std::function<void(const WordArray&)>;
 
 long long start;
 long long timeUS() { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count(); }
 
-int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, uint maxLetter, bool skipped)
+int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, WordArray& words, uint maxLetter, bool skipped)
 {
 	if (numwords == 5)
 	{
-		output(words);
+		solutions.push_back(words);
 		return 1;
 	}
 
@@ -128,9 +154,8 @@ int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, 
 			if (totalbits & w)
 				continue;
 
-			size_t idx = bitstoindex[w];
-			newwords[numwords] = idx;
-			numsolutions += findwords(output, totalbits | w, numwords + 1, newwords, i + 1, skipped);
+			newwords[numwords] = w;
+			numsolutions += findwords(solutions, totalbits | w, numwords + 1, newwords, i + 1, skipped);
 
 			OUTPUT(if (numwords == 0) std::cout << "\33[2K\rFound " << numsolutions << " solutions. Running time: " << (timeUS() - start) << "us");
 		}
@@ -143,16 +168,18 @@ int findwords(OutputFn& output, uint totalbits, int numwords, WordArray& words, 
 	return numsolutions;
 }
 
-int findwords(OutputFn output)
+int findwords(std::vector<WordArray>& solutions)
 {
     WordArray words = { };
-    return findwords(output, 0, 0, words, 0, false);
+    return findwords(solutions, 0, 0, words, 0, false);
 }
 
 int main()
 {
     start = timeUS();
     readwords("words_alpha.txt");
+    std::vector<WordArray> solutions;
+    solutions.reserve(10000);
 
     OUTPUT(
         std::cout << wordbits.size() << " unique words\n";
@@ -162,17 +189,24 @@ int main()
 	    std::cout << "\n";
     );
 
-    std::ofstream out("solutions.txt");
-    int num = findwords([&](const WordArray& words)
-        {
-            for (auto idx : words)
-                out << wordanagrams[idx][0] << "\t";
-            out << "\n";
-        });
+    auto startAlgo = timeUS();
+    int num = findwords(solutions);
+
+    auto startOutput = timeUS();
+	std::ofstream out("solutions.txt");
+    for (auto& words : solutions)
+    {
+        for (auto w : words)
+            out << words[bitstoindex[w]] << "\t";
+        out << "\n";
+    };
 
 	OUTPUT(std::cout << "\n");
 
-	long long time = timeUS() - start;
+	long long end = timeUS();
 	std::cout << num << " solutions written to solutions.txt.\n";
-    std::cout << "Total time: " << time << "us (" << time / 1.e6f << "s)\n";
+    std::cout << "Total time: " << end - start << "us (" << (end - start) / 1.e6f << "s)\n";
+    std::cout << "Read:    " << std::setw(8) << startAlgo - start << "us\n";
+	std::cout << "Process: " << std::setw(8) << startOutput - startAlgo << "us\n";
+	std::cout << "Write:   " << std::setw(8) << end - startOutput << "us\n";
 }
