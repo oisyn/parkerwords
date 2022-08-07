@@ -10,6 +10,8 @@ Process:    43255us
 Write:        416us
 ```
 
+For an implementation using AVX2, see the [SSE branch](https://github.com/oisyn/parkerwords/tree/sse) (currently at 23ms)
+
 Since writing to stdout now no longer takes a negligible amount of time relative to the rest of the algorithm, I've made most output conditional. Uncomment the NO_OUTPUT #define in the top of the file to reenable some verbose information and progress indication.
 
 ## Description
