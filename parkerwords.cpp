@@ -28,7 +28,7 @@
 using uint = unsigned int;
 
 std::vector<uint> wordbits;
-std::vector<std::string> words;
+std::vector<std::string> allwords;
 std::unordered_map<uint, size_t> bitstoindex;
 std::vector<uint> letterindex[26];
 uint letterorder[26];
@@ -89,7 +89,7 @@ void readwords(const char* file)
         {
             bitstoindex[bits] = wordbits.size();
             wordbits.push_back(bits);
-            words.emplace_back(word);
+            allwords.emplace_back(word);
 
             // count letter frequency
             for(char c: word)
@@ -225,7 +225,7 @@ int main()
     for (auto& words : solutions)
     {
         for (auto w : words)
-            out << words[bitstoindex[w]] << "\t";
+            out << allwords[bitstoindex[w]] << "\t";
         out << "\n";
     };
 
