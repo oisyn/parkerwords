@@ -123,11 +123,12 @@ void readwords(const char* file)
         letterindex[min].push_back(w);
     }
 
+    // lets make sure the ends of our indices are padded with ffff'ffff so we can use unaligned sse256 loads
 	for (int i = 0; i < 26; i++)
 	{
-		letterindex[i].push_back(~0);
-		letterindex[i].push_back(~0);
-		letterindex[i].push_back(~0);
+        for (int j = 0; j < 7; j++)
+    		letterindex[i].push_back(~0);
+        letterindex[i].resize(letterindex[i].size() - 7);
 	}
 }
 
@@ -161,28 +162,22 @@ int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, W
         auto& index = letterindex[i];
         auto pWords = &index[0];
         auto pEnd = pWords + index.size();
-        __m128i current = _mm_set1_epi32(totalbits);
-        for (; pWords < pEnd; pWords += 4)
+        __m256i current = _mm256_set1_epi32(totalbits);
+        for (; pWords < pEnd; pWords += 8)
 		{
-            __m128i wordsbits = _mm_loadu_epi32(pWords);
-            __m128i mask = _mm_cmpeq_epi32(_mm_and_si128(wordsbits, current), _mm_setzero_si128());
-            int mvmask = _mm_movemask_epi8(mask);
-            if (!mvmask)
-                continue;
-
-            for (int m = 1, j = 0; m < 0x10000; m <<= 4, j++)
+            __m256i wordsbits = _mm256_loadu_epi32(pWords);
+            __m256i mask = _mm256_cmpeq_epi32(_mm256_and_si256(wordsbits, current), _mm256_setzero_si256());
+            uint mvmask = _mm256_movemask_epi8(mask);
+            mvmask &= 0x11111111;
+			while(mvmask)
 			{
-				if (!(mvmask & m))
-					continue;
+                uint idx = std::countr_zero(mvmask) >> 2;
 
-                uint w = pWords[j];
-                if (w & 0x8000'000)
-                    continue;
-
-                newwords[numwords] = w;
-                if (!bitstoindex.contains(w))
-                    __debugbreak();
+				uint w = pWords[idx];
+				newwords[numwords] = w;
 				numsolutions += findwords(solutions, totalbits | w, numwords + 1, newwords, i + 1, skipped);
+
+                mvmask &= mvmask - 1;
 			}
 
 			OUTPUT(if (numwords == 0) std::cout << "\33[2K\rFound " << numsolutions << " solutions. Running time: " << (timeUS() - start) << "us");
@@ -199,7 +194,7 @@ int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, W
 int findwords(std::vector<WordArray>& solutions)
 {
     WordArray words = { };
-    return findwords(solutions, 0, 0, words, 0, false);
+    return findwords(solutions, 0x8000'0000, 0, words, 0, false);
 }
 
 int main()
