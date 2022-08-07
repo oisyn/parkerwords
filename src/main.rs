@@ -182,11 +182,15 @@ fn findwords(
 }
 
 fn output(index_to_word: &Vec<String>, words: &[usize; 5]) -> () {
-    if cfg!(debug_assertions) {
-        for i in 0..5 {
-            print!("{}", index_to_word[words[i]]);
-        }
-        println!()
+    if true || cfg!(debug_assertions) {
+        println!(
+            "{} {} {} {} {}",
+            index_to_word[words[0]],
+            index_to_word[words[1]],
+            index_to_word[words[2]],
+            index_to_word[words[3]],
+            index_to_word[words[4]]
+        );
     }
 }
 
