@@ -1,3 +1,16 @@
+## WARNING
+This is a special SSE branch of my code, that requires AVX2 to work. It compiles with Visual Studio on Windows, not really sure how portable it still is with all the intrinsics.
+
+On my machine (Ryzen 5800X)
+```
+Total time: 22968us (0.022968s)
+Read:       11923us
+Process:    10604us
+Write:        441us
+```
+
+Original readme.md:
+
 A solution to the problem of finding five English words with 25 distinct characters, as posed in this video by Matt Parker: https://www.youtube.com/watch?v=_-AfhLQfb6w
 
 To compile, either open parkerwords.sln in VS 2019 or later, or compile parkerwords.cpp using your favorite C++20 compiler.
