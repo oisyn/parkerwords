@@ -2,7 +2,13 @@ A solution to the problem of finding five English words with 25 distinct charact
 
 To compile, either open parkerwords.sln in VS 2019 or later, or compile parkerwords.cpp using your favorite C++20 compiler.
 
-It takes 0.077 seconds to run on my AMD Ryzen 5800X, and finds all the 538 solutions mentioned in the video. Result is written to solutions.txt.
+It takes 0.055 seconds to run on my AMD Ryzen 5800X, and finds all the 538 solutions mentioned in the video. Result is written to solutions.txt.
+```
+Total time: 55332us (0.055332s)
+Read:       11661us
+Process:    43255us
+Write:        416us
+```
 
 Since writing to stdout now no longer takes a negligible amount of time relative to the rest of the algorithm, I've made most output conditional. Uncomment the NO_OUTPUT #define in the top of the file to reenable some verbose information and progress indication.
 
