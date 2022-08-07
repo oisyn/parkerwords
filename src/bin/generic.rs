@@ -2,6 +2,9 @@ use std::collections::HashMap;
 
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
+/// Maximum amount of skipped letters
+const MAX_GAP: u32 = 26 - 7 * 3;
+
 fn findwords(
     letterorder: &[usize; 26],
     letterindexes: &[Vec<usize>; 26],
@@ -11,8 +14,9 @@ fn findwords(
     totalbits: usize,
     mut words: &mut Vec<usize>,
     max_letter: usize,
+    mut skips: u32,
 ) -> usize {
-    if totalbits.count_ones() == 26 {
+    if totalbits.count_ones() >= 26 - MAX_GAP {
         output(index_to_word, words);
         return 1;
     }
@@ -47,10 +51,11 @@ fn findwords(
                             totalbits | w,
                             &mut newwords,
                             i + 1,
+                            skips,
                         )
                     }
                 })
-                .sum::<usize>()
+                .sum::<usize>();
         } else {
             for w in letterindexes[i].iter() {
                 if totalbits & w != 0 {
@@ -67,17 +72,33 @@ fn findwords(
                     totalbits | w,
                     &mut words,
                     i + 1,
+                    skips,
                 );
                 words.pop();
             }
         }
-        break;
+
+        skips += 1;
+
+        if skips > MAX_GAP {
+            break;
+        }
     }
 
     numsolutions
 }
 
 fn output(index_to_word: &Vec<String>, words: &Vec<usize>) -> () {
+    let mut print = false;
+    for word in words.iter() {
+        if index_to_word[*word].len() > 11 {
+            print = true;
+        }
+    }
+    if !print && false {
+        return;
+    }
+
     let mut first: bool = true;
     for word in words.iter() {
         if first {
@@ -117,6 +138,7 @@ fn main() {
         &index_to_word,
         0,
         &mut words,
+        0,
         0,
     );
 
