@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <intrin.h>
+#include <emmintrin.h>
 
 // uncomment this line to write info to stdout, which takes away precious CPU time
 #define NO_OUTPUT
@@ -120,6 +122,13 @@ void readwords(const char* file)
 
         letterindex[min].push_back(w);
     }
+
+	for (int i = 0; i < 26; i++)
+	{
+		letterindex[i].push_back(~0);
+		letterindex[i].push_back(~0);
+		letterindex[i].push_back(~0);
+	}
 }
 
 using WordArray = std::array<uint, 5>;
@@ -138,7 +147,7 @@ int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, W
 
 	int numsolutions = 0;
 	size_t max = wordbits.size();
-	WordArray newwords = words;
+    WordArray newwords = words;
 
     // walk over all letters in a certain order until we find an unused one
 	for (uint i = maxLetter; i < 26; i++)
@@ -149,13 +158,32 @@ int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, W
             continue;
 
         // take all words from the index of this letter and add each word to the solution if all letters of the word aren't used before.
-        for (uint w : letterindex[i])
+        auto& index = letterindex[i];
+        auto pWords = &index[0];
+        auto pEnd = pWords + index.size();
+        __m128i current = _mm_set1_epi32(totalbits);
+        for (; pWords < pEnd; pWords += 4)
 		{
-			if (totalbits & w)
-				continue;
+            __m128i wordsbits = _mm_loadu_epi32(pWords);
+            __m128i mask = _mm_cmpeq_epi32(_mm_and_si128(wordsbits, current), _mm_setzero_si128());
+            int mvmask = _mm_movemask_epi8(mask);
+            if (!mvmask)
+                continue;
 
-			newwords[numwords] = w;
-			numsolutions += findwords(solutions, totalbits | w, numwords + 1, newwords, i + 1, skipped);
+            for (int m = 1, j = 0; m < 0x10000; m <<= 4, j++)
+			{
+				if (!(mvmask & m))
+					continue;
+
+                uint w = pWords[j];
+                if (w & 0x8000'000)
+                    continue;
+
+                newwords[numwords] = w;
+                if (!bitstoindex.contains(w))
+                    __debugbreak();
+				numsolutions += findwords(solutions, totalbits | w, numwords + 1, newwords, i + 1, skipped);
+			}
 
 			OUTPUT(if (numwords == 0) std::cout << "\33[2K\rFound " << numsolutions << " solutions. Running time: " << (timeUS() - start) << "us");
 		}
