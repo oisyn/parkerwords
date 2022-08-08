@@ -106,7 +106,7 @@ fn main() {
     let mut letterorder: [usize; 26] = [0; 26];
 
     // TODO: Add error handling
-    let begin = SystemTime::now();
+    let begin: SystemTime = SystemTime::now();
     parkerrust::readwords(
         &mut bits_to_index,
         &mut index_to_bits,
@@ -118,11 +118,11 @@ fn main() {
     .unwrap();
     let read_time: u128 = begin.elapsed().unwrap().as_micros();
 
-    let mid = SystemTime::now();
+    let mid: SystemTime = SystemTime::now();
 
-    let mut words = [0usize; 5];
+    let mut words: [usize; 5] = [0; 5];
 
-    let solutions = findwords(
+    let solutions: usize = findwords(
         &letterorder,
         &letterindexes,
         &bits_to_index,
