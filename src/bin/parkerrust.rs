@@ -12,7 +12,7 @@ fn findwords(
     numwords: usize,
     words: &mut [usize; 5],
     max_letter: usize,
-    mut skipped: bool,
+    mut skipped: i32,
 ) -> usize {
     if numwords == 5 {
         output(index_to_word, words);
@@ -39,7 +39,7 @@ fn findwords(
                         0usize
                     } else {
                         let idx: usize = bits_to_index[&w];
-                        let mut newwords = words.clone();
+                        let mut newwords: [usize; 5] = [0; 5];
                         newwords[numwords] = idx;
                         findwords(
                             letterorder,
@@ -55,6 +55,22 @@ fn findwords(
                     }
                 })
                 .sum::<usize>()
+        } else if numwords == 4 && skipped >= 0 {
+            let candidate = !(totalbits | 1 << letterorder[skipped as usize]) & 0x3FFFFFF;
+            if let Some(last_index) = bits_to_index.get(&candidate) {
+                words[numwords] = *last_index;
+                numsolutions += findwords(
+                    letterorder,
+                    letterindexes,
+                    bits_to_index,
+                    index_to_word,
+                    totalbits | candidate,
+                    numwords + 1,
+                    words,
+                    i + 1,
+                    skipped,
+                );
+            }
         } else {
             for w in letterindexes[i].iter() {
                 if totalbits & w != 0 {
@@ -77,10 +93,10 @@ fn findwords(
             }
         }
 
-        if skipped {
+        if skipped >= 0 {
             break;
         }
-        skipped = true;
+        skipped = i as i32;
     }
 
     numsolutions
@@ -131,7 +147,7 @@ fn main() {
         0,
         &mut words,
         0,
-        false,
+        -1,
     );
 
     let process_time: u128 = mid.elapsed().unwrap().as_micros();
