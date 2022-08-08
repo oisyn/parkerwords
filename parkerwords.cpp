@@ -1,6 +1,7 @@
 #include <bit>
 #include <ctime>
 #include <vector>
+#include <deque>
 #include <string>
 #include <unordered_map>
 #include <cstdio>
@@ -11,6 +12,12 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <atomic>
+#include <thread>
+#include <condition_variable>
+#include <mutex>
+
+constexpr int MaxThreads = 16;
 
 // uncomment this line to write info to stdout, which takes away precious CPU time
 #define NO_OUTPUT
@@ -128,17 +135,39 @@ using OutputFn = std::function<void(const WordArray&)>;
 long long start;
 long long timeUS() { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count(); }
 
-int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, WordArray& words, uint maxLetter, bool skipped)
+
+struct State
+{
+    uint totalbits;
+    int numwords;
+    WordArray words;
+    uint maxletter;
+    bool skipped;
+    bool stop;
+};
+std::mutex queueMutex;
+std::condition_variable queueCVar;
+std::deque<State> queue;
+
+void findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, WordArray words, uint maxLetter, bool skipped, bool force = false)
 {
 	if (numwords == 5)
 	{
 		solutions.push_back(words);
-		return 1;
+		return;
 	}
 
-	int numsolutions = 0;
+    if (!force && numwords == 1)
+    {
+		{
+			std::unique_lock lock{ queueMutex };
+			queue.push_back({ .totalbits = totalbits, .numwords = numwords, .words = words, .maxletter = maxLetter, .skipped = skipped, .stop = false });
+		}
+        queueCVar.notify_one();
+        return;
+    }
+
 	size_t max = wordbits.size();
-	WordArray newwords = words;
 
     // walk over all letters in a certain order until we find an unused one
 	for (uint i = maxLetter; i < 26; i++)
@@ -154,8 +183,8 @@ int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, W
 			if (totalbits & w)
 				continue;
 
-			newwords[numwords] = w;
-			numsolutions += findwords(solutions, totalbits | w, numwords + 1, newwords, i + 1, skipped);
+			words[numwords] = w;
+			findwords(solutions, totalbits | w, numwords + 1, words, i + 1, skipped);
 
 			OUTPUT(if (numwords == 0) std::cout << "\33[2K\rFound " << numsolutions << " solutions. Running time: " << (timeUS() - start) << "us");
 		}
@@ -164,14 +193,51 @@ int findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, W
             break;
         skipped = true;
 	}
-
-	return numsolutions;
 }
+
+void findthread(std::vector<WordArray>& solutions)
+{
+	std::vector<WordArray> mysolutions;
+
+    std::unique_lock lock{ queueMutex };
+    for(;;)
+    {
+        if (queue.empty())
+            queueCVar.wait(lock, []{ return !queue.empty(); });
+        State state = queue.front();
+        queue.pop_front();
+        if (state.stop)
+            break;
+        lock.unlock();
+        findwords(mysolutions, state.totalbits, state.numwords, state.words, state.maxletter, state.skipped, true);
+        lock.lock();
+    }
+
+    solutions.insert(solutions.end(), mysolutions.begin(), mysolutions.end());
+}
+
 
 int findwords(std::vector<WordArray>& solutions)
 {
-    WordArray words = { };
-    return findwords(solutions, 0, 0, words, 0, false);
+    std::vector<std::jthread> threads;
+    auto numThreads = std::thread::hardware_concurrency() - 1;
+    threads.reserve(numThreads);
+
+    for (uint i = 0; i < numThreads; i++)
+        threads.emplace_back([&]() { findthread(solutions); });
+
+	WordArray words = { };
+	findwords(solutions, 0, 0, words, 0, false);
+
+	{
+		std::unique_lock lock{ queueMutex };
+		for (uint i = 0; i < numThreads; i++)
+            queue.push_back({ .stop = true });
+		queueCVar.notify_all();
+	}
+    threads.clear();
+
+    return int(solutions.size());
 }
 
 int main()
