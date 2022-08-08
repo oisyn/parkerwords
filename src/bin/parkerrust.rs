@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::SystemTime};
 
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
@@ -87,6 +87,7 @@ fn findwords(
 }
 
 fn output(index_to_word: &Vec<String>, words: &[usize; 5]) -> () {
+    // return;
     println!(
         "{} {} {} {} {}",
         index_to_word[words[0]],
@@ -105,6 +106,7 @@ fn main() {
     let mut letterorder: [usize; 26] = [0; 26];
 
     // TODO: Add error handling
+    let begin = SystemTime::now();
     parkerrust::readwords(
         &mut bits_to_index,
         &mut index_to_bits,
@@ -114,6 +116,9 @@ fn main() {
         Some(5),
     )
     .unwrap();
+    let read_time: u128 = begin.elapsed().unwrap().as_micros();
+
+    let mid = SystemTime::now();
 
     let mut words = [0usize; 5];
 
@@ -129,5 +134,10 @@ fn main() {
         false,
     );
 
+    let process_time: u128 = mid.elapsed().unwrap().as_micros();
+
     println!("Found {} solutions", solutions);
+    println!("Reading time: {:8}us", read_time);
+    println!("Processing time: {:5}us", process_time);
+    println!("Total time: {:10}us", begin.elapsed().unwrap().as_micros());
 }
