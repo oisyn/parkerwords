@@ -3,10 +3,10 @@ This is a special SSE branch of my code, that requires AVX2 to work. It compiles
 
 On my machine (Ryzen 5800X)
 ```
-Total time: 10379us (0.010379s)
-Read:        8008us
-Process:     2000us
-Write:        371us
+Total time: 6761us (0.006761s)
+Read:        4305us
+Process:     2041us
+Write:        415us
 ```
 
 Original readme.md:
