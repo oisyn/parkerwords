@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, io};
+use std::{collections::HashMap, fs, io, time::SystemTime};
 
 const MIN_WORD_SIZE: usize = 1;
 
@@ -9,15 +9,15 @@ pub fn readwords(
     letterindexes: &mut [Vec<usize>; 26],
     letterorder: &mut [usize; 26],
     fixed_size: Option<usize>,
-) -> io::Result<String> {
+) -> io::Result<()> {
     #[derive(Copy, Clone)]
     struct Frequency {
         f: usize,
         l: usize,
     }
 
+    let now: SystemTime = SystemTime::now();
     let file: String = fs::read_to_string("words_alpha.txt")?;
-    println!("{}", file.len());
 
     let mut freq: [Frequency; 26] = array_init::array_init(|i: usize| Frequency { f: 0, l: i });
 
@@ -63,6 +63,8 @@ pub fn readwords(
         index_to_word.push(file[this_word_begin..i].to_string());
     }
 
+    println!("{:5}us Ingested file", now.elapsed().unwrap().as_micros());
+
     // rearrange letter order based on lettter frequency (least used letter gets lowest index)
     freq.sort_by(|a, b| a.f.cmp(&b.f));
 
@@ -87,7 +89,5 @@ pub fn readwords(
         letterindexes[min].push(*w);
     }
 
-    // build index based on least used letter
-
-    Ok(file)
+    Ok(())
 }

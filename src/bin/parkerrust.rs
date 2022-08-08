@@ -136,8 +136,8 @@ fn main() {
 
     let process_time: u128 = mid.elapsed().unwrap().as_micros();
 
+    println!("{:5}us Reading time", read_time);
+    println!("{:5}us Processing time", process_time);
+    println!("{:5}us Total time", begin.elapsed().unwrap().as_micros());
     println!("Found {} solutions", solutions);
-    println!("Reading time: {:8}us", read_time);
-    println!("Processing time: {:5}us", process_time);
-    println!("Total time: {:10}us", begin.elapsed().unwrap().as_micros());
 }
