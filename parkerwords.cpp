@@ -33,6 +33,18 @@ constexpr int MaxThreads = 16;
 
 
 using uint = unsigned int;
+long long timeUS() { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count(); }
+namespace timers
+{
+	long long start;
+    long long startFindWords;
+    long long startSort;
+    long long startIndex;
+    long long startSearch;
+    long long startWrite;
+    long long end;
+}
+
 
 std::vector<uint> wordbits;
 std::vector<std::string> allwords;
@@ -78,31 +90,48 @@ void readwords(const char* file)
     buf.resize(in.tellg());
     in.seekg(0, std::ios::beg);
     in.read(&buf[0], buf.size());
+    static const char endings[] = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+    buf.insert(buf.end(), endings, endings + 32);
 
     const char* str = &buf[0];
 	const char* strEnd = str + buf.size();
 
+    timers::startFindWords = timeUS();
+
+    __m256i allNl = _mm256_set1_epi8('\n');
+	__m256i allCr = _mm256_set1_epi8('\r');
+
     // read words
-    std::string_view word;
-    while(!(word = getword(str, strEnd)).empty())
+    uint lastpos = 0, curpos = 0;
+    for(; str < strEnd; str += 32, curpos += 32)
     {
-        if (word.size() != 5)
-            continue;
-        uint bits = getbits(word);
-        if (std::popcount(bits) != 5)
-            continue;
-
-        if (!bitstoindex.contains(bits))
+        __m256i data = _mm256_loadu_si256((__m256i*)str);
+        __m256i nls = _mm256_or_si256(_mm256_cmpeq_epi8(data, allNl), _mm256_cmpeq_epi8(data, allCr));
+		uint mvmask = _mm256_movemask_epi8(nls);
+        while(mvmask)
         {
-            bitstoindex[bits] = wordbits.size();
-            wordbits.push_back(bits);
-            allwords.emplace_back(word);
+            uint rpos = std::countr_zero(mvmask) + curpos;
+            if (rpos - lastpos == 5)
+            {
+                std::string_view word(&buf[lastpos], 5);
+				uint bits = getbits(word);
+				if (std::popcount(bits) == 5 && !bitstoindex.contains(bits))
+				{
+					bitstoindex[bits] = wordbits.size();
+					wordbits.push_back(bits);
+					allwords.emplace_back(word);
 
-            // count letter frequency
-            for(char c: word)
-                freq[c - 'a'].f++;
+					// count letter frequency
+					for (char c : word)
+						freq[c - 'a'].f++;
+				}
+            }
+            lastpos = rpos + 1;
+            mvmask &= mvmask - 1;
         }
     }
+
+	timers::startSort = timeUS();
 
     // rearrange letter order based on lettter frequency (least used letter gets lowest index)
     std::sort(std::begin(freq), std::end(freq), [](auto a, auto b) { return a.f < b.f; });
@@ -112,6 +141,8 @@ void readwords(const char* file)
 		letterorder[i] = freq[i].l;
         reverseletterorder[freq[i].l] = i;
     }
+
+    timers::startIndex = timeUS();
 
     // build index based on least used letter
     for (uint w : wordbits)
@@ -141,10 +172,6 @@ void readwords(const char* file)
 
 using WordArray = std::array<uint, 5>;
 using OutputFn = std::function<void(const WordArray&)>;
-
-long long start;
-long long timeUS() { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count(); }
-
 
 struct State
 {
@@ -194,7 +221,7 @@ void findwords(std::vector<WordArray>& solutions, uint totalbits, int numwords, 
         __m256i current = _mm256_set1_epi32(totalbits);
         for (; pWords < pEnd; pWords += 8)
 		{
-            __m256i wordsbits = _mm256_loadu_epi32(pWords);
+            __m256i wordsbits = _mm256_loadu_si256((__m256i*)pWords);
             __m256i mask = _mm256_cmpeq_epi32(_mm256_and_si256(wordsbits, current), _mm256_setzero_si256());
             uint mvmask = _mm256_movemask_epi8(mask);
             mvmask &= 0x11111111;
@@ -265,10 +292,8 @@ int findwords(std::vector<WordArray>& solutions)
 
 int main()
 {
-    start = timeUS();
+    timers::start = timeUS();
     readwords("words_alpha.txt");
-    std::vector<WordArray> solutions;
-    solutions.reserve(10000);
 
     OUTPUT(
         std::cout << wordbits.size() << " unique words\n";
@@ -278,10 +303,13 @@ int main()
 	    std::cout << "\n";
     );
 
-    auto startAlgo = timeUS();
+	timers::startSearch = timeUS();
+
+    std::vector<WordArray> solutions;
+	solutions.reserve(10000);
     int num = findwords(solutions);
 
-    auto startOutput = timeUS();
+    timers::startWrite = timeUS();
 	std::ofstream out("solutions.txt");
     for (auto& words : solutions)
     {
@@ -292,10 +320,16 @@ int main()
 
 	OUTPUT(std::cout << "\n");
 
-	long long end = timeUS();
+	timers::end = timeUS();
+    using namespace timers;
 	std::cout << num << " solutions written to solutions.txt.\n";
     std::cout << "Total time: " << end - start << "us (" << (end - start) / 1.e6f << "s)\n";
-    std::cout << "Read:    " << std::setw(8) << startAlgo - start << "us\n";
-	std::cout << "Process: " << std::setw(8) << startOutput - startAlgo << "us\n";
-	std::cout << "Write:   " << std::setw(8) << end - startOutput << "us\n";
+    std::cout << "Read:    " << std::setw(8) << startSearch - start << "us\n";
+	std::cout << "Process: " << std::setw(8) << startWrite - startSearch << "us\n";
+	std::cout << "Write:   " << std::setw(8) << end - startWrite << "us\n";
+    std::cout << "\n";
+	std::cout << "R.Read:  " << std::setw(8) << startFindWords - start << "us\n";
+	std::cout << "R.Words: " << std::setw(8) << startSort - startFindWords << "us\n";
+	std::cout << "R.Sort:  " << std::setw(8) << startIndex - startSort << "us\n";
+	std::cout << "R.Index: " << std::setw(8) << startSearch - startIndex << "us\n";
 }
