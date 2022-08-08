@@ -86,7 +86,7 @@ void readwords(const char* file)
 
     // open file
     std::vector<char> buf;
-    std::ifstream in(file);
+    std::ifstream in(file, std::ios::binary);
     in.seekg(0, std::ios::end);
     size_t filesize = in.tellg();
     buf.resize(filesize);
