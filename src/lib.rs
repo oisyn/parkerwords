@@ -1,28 +1,6 @@
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::{self, BufRead},
-    path::Path,
-};
+use std::{collections::HashMap, fs, io};
 
-/// Returns an Iterator to the Reader of the lines of the file.
-///
-/// The output is wrapped in a Result to allow matching on errors
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
-
-fn getbits(word: &String) -> usize {
-    let mut result: usize = 0;
-    for c in word.chars() {
-        result |= 1 << (c as usize - 'a' as usize);
-    }
-    result
-}
+const MIN_WORD_SIZE: usize = 1;
 
 pub fn readwords(
     bits_to_index: &mut HashMap<usize, usize>,
@@ -31,44 +9,58 @@ pub fn readwords(
     letterindexes: &mut [Vec<usize>; 26],
     letterorder: &mut [usize; 26],
     fixed_size: Option<usize>,
-) -> io::Result<()> {
+) -> io::Result<String> {
     #[derive(Copy, Clone)]
     struct Frequency {
         f: usize,
         l: usize,
     }
 
+    let file: String = fs::read_to_string("words_alpha.txt")?;
+    println!("{}", file.len());
+
     let mut freq: [Frequency; 26] = array_init::array_init(|i: usize| Frequency { f: 0, l: i });
 
     // read words
-    for line in read_lines("words_alpha.txt")? {
-        let line: String = line?;
+    let mut word_begin: usize = 0;
+    let mut bits: usize = 0;
+    for (i, char) in file.chars().enumerate() {
+        // _technically_ this loop will not work for the last word
+        // In practice the last word has a duplicate letter so we don't care
+        if char != '\n' {
+            bits |= 1 << (char as usize - 'a' as usize);
+            continue;
+        }
+
+        let len = i - word_begin;
+        let this_bits = bits;
+        let this_word_begin = word_begin;
+        word_begin = i + 1;
+        bits = 0;
         if let Some(sz) = fixed_size {
-            if line.len() != sz {
+            if len != sz {
                 continue;
             }
-        } else if line.len() < 1 {
+        } else if len < MIN_WORD_SIZE {
             continue;
         }
 
-        let bits = getbits(&line);
-
-        if bits.count_ones() as usize != line.len() {
+        if this_bits.count_ones() as usize != len {
             continue;
         }
 
-        if bits_to_index.contains_key(&bits) {
+        if bits_to_index.contains_key(&this_bits) {
             continue;
         }
 
         // count letter frequency
-        for c in line.chars() {
+        for c in file[this_word_begin..i].chars() {
             freq[c as usize - 'a' as usize].f += 1;
         }
 
-        bits_to_index.insert(bits, index_to_bits.len());
-        index_to_bits.push(bits);
-        index_to_word.push(line);
+        bits_to_index.insert(this_bits, index_to_bits.len());
+        index_to_bits.push(this_bits);
+        index_to_word.push(file[this_word_begin..i].to_string());
     }
 
     // rearrange letter order based on lettter frequency (least used letter gets lowest index)
@@ -97,5 +89,5 @@ pub fn readwords(
 
     // build index based on least used letter
 
-    Ok(())
+    Ok(file)
 }
