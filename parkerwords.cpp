@@ -14,6 +14,7 @@
 #include <chrono>
 #include <atomic>
 #include <thread>
+#include <future>
 #include <condition_variable>
 #include <mutex>
 #include <intrin.h>
@@ -87,11 +88,21 @@ void readwords(const char* file)
     std::vector<char> buf;
     std::ifstream in(file);
     in.seekg(0, std::ios::end);
-    buf.resize(in.tellg());
+    size_t filesize = in.tellg();
+    buf.resize(filesize);
+	static const char endings[] = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+	buf.insert(buf.end(), endings, endings + 32);
+
+    constexpr size_t chunksize = 256 << 10; // 256 kB chunks
     in.seekg(0, std::ios::beg);
-    in.read(&buf[0], buf.size());
-    static const char endings[] = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-    buf.insert(buf.end(), endings, endings + 32);
+    in.read(&buf[0], chunksize);
+
+    volatile size_t nextChunk = chunksize;
+	auto doread = [&]()
+	{
+		in.read(&buf[nextChunk], chunksize);
+	};
+	std::future<void> nextRead = std::async(std::launch::async, doread);
 
     const char* str = &buf[0];
 	const char* strEnd = str + buf.size();
@@ -103,8 +114,17 @@ void readwords(const char* file)
 
     // read words
     uint lastpos = 0, curpos = 0;
+
     for(; str < strEnd; str += 32, curpos += 32)
     {
+        if (curpos == nextChunk)
+        {
+            nextRead.wait();
+            nextChunk += chunksize;
+            if (nextChunk < filesize)
+                nextRead = std::async(std::launch::async, doread);
+        }
+
         __m256i data = _mm256_loadu_si256((__m256i*)str);
         __m256i nls = _mm256_or_si256(_mm256_cmpeq_epi8(data, allNl), _mm256_cmpeq_epi8(data, allCr));
 		uint mvmask = _mm256_movemask_epi8(nls);
