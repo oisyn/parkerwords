@@ -47,7 +47,7 @@ pub fn readwords(
             if line.len() != sz {
                 continue;
             }
-        } else if line.len() < 7 {
+        } else if line.len() < 1 {
             continue;
         }
 

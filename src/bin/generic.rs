@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 /// Maximum amount of skipped letters
-const MAX_GAP: u32 = 26 - 7 * 3;
+const MAX_GAP: u32 = 0;
 
 fn findwords(
     letterorder: &[usize; 26],
@@ -19,6 +19,10 @@ fn findwords(
     if totalbits.count_ones() >= 26 - MAX_GAP {
         output(index_to_word, words);
         return 1;
+    }
+
+    if words.len() >= 5 {
+        return 0;
     }
 
     let mut numsolutions: usize = 0;
@@ -91,11 +95,11 @@ fn findwords(
 fn output(index_to_word: &Vec<String>, words: &Vec<usize>) -> () {
     let mut print = false;
     for word in words.iter() {
-        if index_to_word[*word].len() > 11 {
+        if index_to_word[*word].len() > 5 {
             print = true;
         }
     }
-    if !print && false {
+    if !print || true {
         return;
     }
 
