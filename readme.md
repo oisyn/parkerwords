@@ -1,4 +1,9 @@
-A solution to the problem of finding five English words with 25 distinct characters, as posed in this video by Matt Parker: https://www.youtube.com/watch?v=_-AfhLQfb6w
+### A solution to the problem of finding five English words with 25 distinct characters, as posed in this video by Matt Parker: https://www.youtube.com/watch?v=_-AfhLQfb6w
+
+---
+**While you're here, Benjamin Paassen was nice enough to run all solutions on his PC and made a sheet with the timing results. Check out the twitter thread [here](https://twitter.com/bpaassen1/status/1556900513505021953).**
+
+---
 
 To compile, either open parkerwords.sln in VS 2019 or later, or compile parkerwords.cpp using your favorite C++20 compiler.
 
