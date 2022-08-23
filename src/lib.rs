@@ -43,10 +43,12 @@ pub fn readwords<'a>(
         }
 
         if this_bits.count_ones() as usize != len {
+            // Skip words with repeated letters
             continue;
         }
 
         if bits_to_index.contains_key(&this_bits) {
+            // Skip anagrams
             continue;
         }
 
