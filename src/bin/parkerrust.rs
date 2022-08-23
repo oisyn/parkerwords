@@ -21,8 +21,11 @@ fn findwords(
 
     let mut numsolutions: usize = 0;
 
+    // If we don't have 5 letters left there is not point going on
+    let upper: usize = 26 - 5;
+
     // walk over all letters in a certain order until we find an unused one
-    for i in max_letter..26 {
+    for i in max_letter..upper {
         let m: usize = 1 << letterorder[i];
         if totalbits & m != 0 {
             continue;
