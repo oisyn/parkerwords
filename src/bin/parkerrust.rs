@@ -15,11 +15,6 @@ fn findwords(
     max_letter: usize,
     mut skipped: i32,
 ) -> usize {
-    if numwords == 5 {
-        output(index_to_word, words);
-        return 1;
-    }
-
     let mut numsolutions: usize = 0;
 
     // If we don't have 5 letters left there is not point going on
@@ -59,41 +54,41 @@ fn findwords(
                     }
                 })
                 .sum::<usize>()
-        } else if numwords == 4 && skipped >= 0 {
-            let candidate = !(totalbits | lettermask[skipped as usize]) & 0x3FFFFFF;
-            if let Some(last_index) = bits_to_index.get(&candidate) {
-                words[numwords] = *last_index;
-                numsolutions += findwords(
-                    lettermask,
-                    letter_to_words_bits,
-                    bits_to_index,
-                    index_to_word,
-                    totalbits | candidate,
-                    numwords + 1,
-                    words,
-                    i + 1,
-                    skipped,
-                )
-            }
         } else {
-            for w in letter_to_words_bits[i].iter() {
-                if totalbits & w != 0 {
-                    continue;
-                }
+            if numwords == 4 && skipped >= 0 {
+                let candidate = !(totalbits | lettermask[skipped as usize]) & 0x3FFFFFF;
+                if let Some(last_index) = bits_to_index.get(&candidate) {
+                    words[numwords] = *last_index;
 
-                let idx: usize = bits_to_index[&w];
-                words[numwords] = idx;
-                numsolutions += findwords(
-                    lettermask,
-                    letter_to_words_bits,
-                    bits_to_index,
-                    index_to_word,
-                    totalbits | w,
-                    numwords + 1,
-                    words,
-                    i + 1,
-                    skipped,
-                );
+                    output(index_to_word, words);
+                    numsolutions += 1
+                }
+            } else {
+                for w in letter_to_words_bits[i].iter() {
+                    if totalbits & w != 0 {
+                        continue;
+                    }
+
+                    let idx: usize = bits_to_index[&w];
+                    words[numwords] = idx;
+
+                    if numwords == 4 {
+                        output(index_to_word, words);
+                        numsolutions += 1
+                    } else {
+                        numsolutions += findwords(
+                            lettermask,
+                            letter_to_words_bits,
+                            bits_to_index,
+                            index_to_word,
+                            totalbits | w,
+                            numwords + 1,
+                            words,
+                            i + 1,
+                            skipped,
+                        )
+                    }
+                }
             }
         }
 
