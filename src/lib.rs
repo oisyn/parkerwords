@@ -1,5 +1,6 @@
-use memmap::Mmap;
 use std::{collections::HashMap, io, time::SystemTime};
+
+use memmap::Mmap;
 
 pub fn readwords<'a>(
     file: &'a Mmap,
@@ -33,16 +34,16 @@ pub fn readwords<'a>(
             continue;
         }
 
-        let len = i - word_begin;
+        let len: usize = i - word_begin;
         let this_bits = bits;
-        let this_word_begin = word_begin;
         word_begin = i + 1;
         bits = 0;
+
         if len != 5 {
             continue;
         }
 
-        if this_bits.count_ones() as usize != len {
+        if this_bits.count_ones() as usize != 5 {
             // Skip words with repeated letters
             continue;
         }
@@ -53,14 +54,15 @@ pub fn readwords<'a>(
         }
 
         // count letter frequency
-        for c in file[this_word_begin..i].iter() {
+        let slice: &[u8] = &file[i - 5..i];
+        for c in slice.iter() {
             let index: usize = *c as usize - 'a' as usize;
             freq[index].count += 1;
         }
 
         bits_to_index.insert(this_bits, index_to_bits.len());
         index_to_bits.push(this_bits);
-        index_to_word.push(&file[this_word_begin..i]);
+        index_to_word.push(slice);
     }
 
     println!("{:5}us Ingested file", now.elapsed().unwrap().as_micros());
