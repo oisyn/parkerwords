@@ -1,6 +1,5 @@
-use std::{collections::HashMap, io, time::SystemTime};
-
 use memmap::Mmap;
+use std::{collections::HashMap, io, time::SystemTime};
 
 const MIN_WORD_SIZE: usize = 1;
 
@@ -10,18 +9,21 @@ pub fn readwords<'a>(
     index_to_bits: &mut Vec<usize>,
     index_to_word: &mut Vec<&'a [u8]>,
     letter_to_words_bits: &mut [Vec<usize>; 26],
-    letterorder: &mut [usize; 26],
+    letterorder: &mut [u8; 26],
     fixed_size: Option<usize>,
 ) -> io::Result<()> {
     #[derive(Copy, Clone)]
     struct Frequency {
-        f: usize,
-        l: usize,
+        pub count: u32,
+        pub letter: u8,
     }
 
     let now: SystemTime = SystemTime::now();
 
-    let mut freq: [Frequency; 26] = array_init::array_init(|i: usize| Frequency { f: 0, l: i });
+    let mut freq: [Frequency; 26] = array_init::array_init(|i: usize| Frequency {
+        count: 0,
+        letter: i as u8,
+    });
 
     // read words
     let mut word_begin: usize = 0;
@@ -58,7 +60,8 @@ pub fn readwords<'a>(
 
         // count letter frequency
         for c in file[this_word_begin..i].iter() {
-            freq[*c as usize - 'a' as usize].f += 1;
+            let index: usize = *c as usize - 'a' as usize;
+            freq[index].count += 1;
         }
 
         bits_to_index.insert(this_bits, index_to_bits.len());
@@ -69,13 +72,13 @@ pub fn readwords<'a>(
     println!("{:5}us Ingested file", now.elapsed().unwrap().as_micros());
 
     // rearrange letter order based on letter frequency (least used letter gets lowest index)
-    freq.sort_by(|a, b| a.f.cmp(&b.f));
+    freq.sort_by(|a, b| a.count.cmp(&b.count));
 
     let mut reverseletterorder: [usize; 26] = [0; 26];
 
     for i in 0..26 {
-        letterorder[i] = freq[i].l;
-        reverseletterorder[freq[i].l] = i;
+        letterorder[i] = freq[i].letter;
+        reverseletterorder[freq[i].letter as usize] = i;
     }
 
     for w in index_to_bits {

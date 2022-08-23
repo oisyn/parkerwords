@@ -4,7 +4,7 @@ use memmap::Mmap;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 fn findwords(
-    letterorder: &[usize; 26],
+    letterorder: &[u8; 26],
     letter_to_words_bits: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
     index_to_word: &Vec<&[u8]>,
@@ -124,7 +124,7 @@ fn main() {
     let mut index_to_bits: Vec<usize> = Vec::new();
     let mut index_to_word: Vec<&[u8]> = Vec::new();
     let mut letter_to_words_bits: [Vec<usize>; 26] = Default::default();
-    let mut letterorder: [usize; 26] = [0; 26];
+    let mut letterorder: [u8; 26] = [0; 26];
 
     // TODO: Add error handling
     let begin: SystemTime = SystemTime::now();

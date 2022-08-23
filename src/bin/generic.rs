@@ -7,7 +7,7 @@ use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 const MAX_GAP: u32 = 0;
 
 fn findwords(
-    letterorder: &[usize; 26],
+    letterorder: &[u8; 26],
     letterindexes: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
     index_to_word: &Vec<&[u8]>,
@@ -125,7 +125,7 @@ fn main() {
     let mut index_to_bits: Vec<usize> = Vec::new();
     let mut index_to_word: Vec<&[u8]> = Vec::new();
     let mut letterindexes: [Vec<usize>; 26] = Default::default();
-    let mut letterorder: [usize; 26] = [0; 26];
+    let mut letterorder: [u8; 26] = [0; 26];
 
     // TODO: Add error handling
     let file: File = File::open("words_alpha.txt").unwrap();
