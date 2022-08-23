@@ -34,7 +34,7 @@ fn findwords(
         // take all words from the index of this letter and add each word to the solution if all letters of the word aren't used before.
 
         // Use parallelism at the top level only
-        if numwords == 0 {
+        if numwords == 0 || numwords == 1 {
             numsolutions += letterindexes[i]
                 .par_iter()
                 .map(|w| {
