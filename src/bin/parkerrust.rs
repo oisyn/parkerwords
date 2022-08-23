@@ -4,12 +4,12 @@ use memmap::Mmap;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 fn findwords(
-    lettermask: &[usize; 26],
-    letter_to_words_bits: &[Vec<usize>; 26],
-    bits_to_index: &HashMap<usize, usize>,
+    lettermask: &[u32; 26],
+    letter_to_words_bits: &[Vec<u32>; 26],
+    bits_to_index: &HashMap<u32, usize>,
     index_to_word: &Vec<&[u8]>,
 
-    totalbits: usize,
+    totalbits: u32,
     numwords: usize,
     words: &mut [usize; 5],
     max_letter: usize,
@@ -27,7 +27,7 @@ fn findwords(
 
     // walk over all letters in a certain order until we find an unused one
     for i in max_letter..upper {
-        let m: usize = lettermask[i];
+        let m: u32 = lettermask[i];
         if totalbits & m != 0 {
             continue;
         }
@@ -120,11 +120,11 @@ fn output(index_to_word: &Vec<&[u8]>, words: &[usize; 5]) -> () {
 }
 
 fn main() {
-    let mut bits_to_index: HashMap<usize, usize> = HashMap::new();
-    let mut index_to_bits: Vec<usize> = Vec::new();
+    let mut bits_to_index: HashMap<u32, usize> = HashMap::new();
+    let mut index_to_bits: Vec<u32> = Vec::new();
     let mut index_to_word: Vec<&[u8]> = Vec::new();
-    let mut letter_to_words_bits: [Vec<usize>; 26] = Default::default();
-    let mut lettermask: [usize; 26] = [0; 26];
+    let mut letter_to_words_bits: [Vec<u32>; 26] = Default::default();
+    let mut lettermask: [u32; 26] = [0; 26];
 
     // TODO: Add error handling
     let begin: SystemTime = SystemTime::now();
@@ -137,7 +137,6 @@ fn main() {
         &mut index_to_word,
         &mut letter_to_words_bits,
         &mut lettermask,
-        Some(5),
     )
     .unwrap();
     let read_time: u128 = begin.elapsed().unwrap().as_micros();

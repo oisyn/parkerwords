@@ -1,16 +1,13 @@
 use memmap::Mmap;
 use std::{collections::HashMap, io, time::SystemTime};
 
-const MIN_WORD_SIZE: usize = 1;
-
 pub fn readwords<'a>(
     file: &'a Mmap,
-    bits_to_index: &mut HashMap<usize, usize>,
-    index_to_bits: &mut Vec<usize>,
+    bits_to_index: &mut HashMap<u32, usize>,
+    index_to_bits: &mut Vec<u32>,
     index_to_word: &mut Vec<&'a [u8]>,
-    letter_to_words_bits: &mut [Vec<usize>; 26],
-    lettermask: &mut [usize; 26],
-    fixed_size: Option<usize>,
+    letter_to_words_bits: &mut [Vec<u32>; 26],
+    lettermask: &mut [u32; 26],
 ) -> io::Result<()> {
     struct Frequency {
         pub count: u32,
@@ -26,13 +23,13 @@ pub fn readwords<'a>(
 
     // read words
     let mut word_begin: usize = 0;
-    let mut bits: usize = 0;
+    let mut bits: u32 = 0;
     for (i, char) in file.iter().enumerate() {
         let char = *char;
         // _technically_ this loop will not work for the last word
         // In practice the last word has a duplicate letter so we don't care
         if char != '\n' as u8 {
-            bits |= 1 << (char as usize - 'a' as usize);
+            bits |= 1 << (char as u32 - 'a' as u32);
             continue;
         }
 
@@ -41,11 +38,7 @@ pub fn readwords<'a>(
         let this_word_begin = word_begin;
         word_begin = i + 1;
         bits = 0;
-        if let Some(sz) = fixed_size {
-            if len != sz {
-                continue;
-            }
-        } else if len < MIN_WORD_SIZE {
+        if len != 5 {
             continue;
         }
 
@@ -76,12 +69,12 @@ pub fn readwords<'a>(
     let mut reverseletterorder: [usize; 26] = [0; 26];
 
     for i in 0..26 {
-        lettermask[i] = (1 as usize) << freq[i].letter;
+        lettermask[i] = (1 as u32) << freq[i].letter;
         reverseletterorder[freq[i].letter as usize] = i;
     }
 
     for w in index_to_bits {
-        let mut m: usize = *w;
+        let mut m: u32 = *w;
         let mut min = 26;
 
         while m != 0 {
