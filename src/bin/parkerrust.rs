@@ -43,7 +43,7 @@ fn findwords(
                         0usize
                     } else {
                         let idx: usize = bits_to_index[&w];
-                        let mut newwords: [usize; 5] = [0; 5];
+                        let mut newwords: [usize; 5] = words.clone();
                         newwords[numwords] = idx;
                         findwords(
                             letterorder,
