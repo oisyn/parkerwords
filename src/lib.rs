@@ -9,7 +9,7 @@ pub fn readwords<'a>(
     index_to_bits: &mut Vec<usize>,
     index_to_word: &mut Vec<&'a [u8]>,
     letter_to_words_bits: &mut [Vec<usize>; 26],
-    letterorder: &mut [u8; 26],
+    lettermask: &mut [usize; 26],
     fixed_size: Option<usize>,
 ) -> io::Result<()> {
     struct Frequency {
@@ -76,7 +76,7 @@ pub fn readwords<'a>(
     let mut reverseletterorder: [usize; 26] = [0; 26];
 
     for i in 0..26 {
-        letterorder[i] = freq[i].letter;
+        lettermask[i] = (1 as usize) << freq[i].letter;
         reverseletterorder[freq[i].letter as usize] = i;
     }
 

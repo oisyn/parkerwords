@@ -4,7 +4,7 @@ use memmap::Mmap;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 fn findwords(
-    letterorder: &[u8; 26],
+    lettermask: &[usize; 26],
     letter_to_words_bits: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
     index_to_word: &Vec<&[u8]>,
@@ -27,7 +27,7 @@ fn findwords(
 
     // walk over all letters in a certain order until we find an unused one
     for i in max_letter..upper {
-        let m: usize = 1 << letterorder[i];
+        let m: usize = lettermask[i];
         if totalbits & m != 0 {
             continue;
         }
@@ -46,7 +46,7 @@ fn findwords(
                         let mut newwords: [usize; 5] = words.clone();
                         newwords[numwords] = idx;
                         findwords(
-                            letterorder,
+                            lettermask,
                             letter_to_words_bits,
                             bits_to_index,
                             index_to_word,
@@ -60,11 +60,11 @@ fn findwords(
                 })
                 .sum::<usize>()
         } else if numwords == 4 && skipped >= 0 {
-            let candidate = !(totalbits | 1 << letterorder[skipped as usize]) & 0x3FFFFFF;
+            let candidate = !(totalbits | lettermask[skipped as usize]) & 0x3FFFFFF;
             if let Some(last_index) = bits_to_index.get(&candidate) {
                 words[numwords] = *last_index;
                 numsolutions += findwords(
-                    letterorder,
+                    lettermask,
                     letter_to_words_bits,
                     bits_to_index,
                     index_to_word,
@@ -73,7 +73,7 @@ fn findwords(
                     words,
                     i + 1,
                     skipped,
-                );
+                )
             }
         } else {
             for w in letter_to_words_bits[i].iter() {
@@ -84,7 +84,7 @@ fn findwords(
                 let idx: usize = bits_to_index[&w];
                 words[numwords] = idx;
                 numsolutions += findwords(
-                    letterorder,
+                    lettermask,
                     letter_to_words_bits,
                     bits_to_index,
                     index_to_word,
@@ -124,7 +124,7 @@ fn main() {
     let mut index_to_bits: Vec<usize> = Vec::new();
     let mut index_to_word: Vec<&[u8]> = Vec::new();
     let mut letter_to_words_bits: [Vec<usize>; 26] = Default::default();
-    let mut letterorder: [u8; 26] = [0; 26];
+    let mut lettermask: [usize; 26] = [0; 26];
 
     // TODO: Add error handling
     let begin: SystemTime = SystemTime::now();
@@ -136,7 +136,7 @@ fn main() {
         &mut index_to_bits,
         &mut index_to_word,
         &mut letter_to_words_bits,
-        &mut letterorder,
+        &mut lettermask,
         Some(5),
     )
     .unwrap();
@@ -147,7 +147,7 @@ fn main() {
     let mut words: [usize; 5] = [0; 5];
 
     let solutions: usize = findwords(
-        &letterorder,
+        &lettermask,
         &letter_to_words_bits,
         &bits_to_index,
         &index_to_word,

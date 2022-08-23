@@ -7,7 +7,7 @@ use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 const MAX_GAP: u32 = 0;
 
 fn findwords(
-    letterorder: &[u8; 26],
+    lettermask: &[usize; 26],
     letterindexes: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
     index_to_word: &Vec<&[u8]>,
@@ -30,7 +30,7 @@ fn findwords(
 
     // walk over all letters in a certain order until we find an unused one
     for i in max_letter..26 {
-        let m: usize = 1 << letterorder[i];
+        let m: usize = lettermask[i];
         if totalbits & m != 0 {
             continue;
         }
@@ -49,7 +49,7 @@ fn findwords(
                         let mut newwords = words.clone();
                         newwords.push(idx);
                         findwords(
-                            letterorder,
+                            lettermask,
                             letterindexes,
                             bits_to_index,
                             index_to_word,
@@ -70,7 +70,7 @@ fn findwords(
                 let idx: usize = bits_to_index[&w];
                 words.push(idx);
                 numsolutions += findwords(
-                    letterorder,
+                    lettermask,
                     letterindexes,
                     bits_to_index,
                     index_to_word,
@@ -125,7 +125,7 @@ fn main() {
     let mut index_to_bits: Vec<usize> = Vec::new();
     let mut index_to_word: Vec<&[u8]> = Vec::new();
     let mut letterindexes: [Vec<usize>; 26] = Default::default();
-    let mut letterorder: [u8; 26] = [0; 26];
+    let mut lettermask: [usize; 26] = [0; 26];
 
     // TODO: Add error handling
     let file: File = File::open("words_alpha.txt").unwrap();
@@ -136,7 +136,7 @@ fn main() {
         &mut index_to_bits,
         &mut index_to_word,
         &mut letterindexes,
-        &mut letterorder,
+        &mut lettermask,
         None,
     )
     .unwrap();
@@ -144,7 +144,7 @@ fn main() {
     let mut words = Vec::new();
 
     let solutions = findwords(
-        &letterorder,
+        &lettermask,
         &letterindexes,
         &bits_to_index,
         &index_to_word,
