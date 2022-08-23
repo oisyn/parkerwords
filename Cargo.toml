@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 array-init = "2"
+memmap = "0.7"
 rayon = "1.5"

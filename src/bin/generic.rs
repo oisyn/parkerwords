@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File};
 
+use memmap::Mmap;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 /// Maximum amount of skipped letters
@@ -9,7 +10,7 @@ fn findwords(
     letterorder: &[usize; 26],
     letterindexes: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
-    index_to_word: &Vec<String>,
+    index_to_word: &Vec<&str>,
 
     totalbits: usize,
     mut words: &mut Vec<usize>,
@@ -92,7 +93,7 @@ fn findwords(
     numsolutions
 }
 
-fn output(index_to_word: &Vec<String>, words: &Vec<usize>) -> () {
+fn output(index_to_word: &Vec<&str>, words: &Vec<usize>) -> () {
     let mut print = false;
     for word in words.iter() {
         if index_to_word[*word].len() > 5 {
@@ -118,12 +119,15 @@ fn output(index_to_word: &Vec<String>, words: &Vec<usize>) -> () {
 fn main() {
     let mut bits_to_index: HashMap<usize, usize> = HashMap::new();
     let mut index_to_bits: Vec<usize> = Vec::new();
-    let mut index_to_word: Vec<String> = Vec::new();
+    let mut index_to_word: Vec<&str> = Vec::new();
     let mut letterindexes: [Vec<usize>; 26] = Default::default();
     let mut letterorder: [usize; 26] = [0; 26];
 
     // TODO: Add error handling
+    let file: File = File::open("words_alpha.txt").unwrap();
+    let file: Mmap = unsafe { Mmap::map(&file).unwrap() };
     parkerrust::readwords(
+        &file,
         &mut bits_to_index,
         &mut index_to_bits,
         &mut index_to_word,

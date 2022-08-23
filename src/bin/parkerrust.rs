@@ -1,12 +1,13 @@
-use std::{collections::HashMap, time::SystemTime};
+use std::{collections::HashMap, fs::File, time::SystemTime};
 
+use memmap::Mmap;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 fn findwords(
     letterorder: &[usize; 26],
     letterindexes: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
-    index_to_word: &Vec<String>,
+    index_to_word: &Vec<&str>,
 
     totalbits: usize,
     numwords: usize,
@@ -105,7 +106,7 @@ fn findwords(
     numsolutions
 }
 
-fn output(index_to_word: &Vec<String>, words: &[usize; 5]) -> () {
+fn output(index_to_word: &Vec<&str>, words: &[usize; 5]) -> () {
     // return;
     println!(
         "{} {} {} {} {}",
@@ -120,13 +121,16 @@ fn output(index_to_word: &Vec<String>, words: &[usize; 5]) -> () {
 fn main() {
     let mut bits_to_index: HashMap<usize, usize> = HashMap::new();
     let mut index_to_bits: Vec<usize> = Vec::new();
-    let mut index_to_word: Vec<String> = Vec::new();
+    let mut index_to_word: Vec<&str> = Vec::new();
     let mut letterindexes: [Vec<usize>; 26] = Default::default();
     let mut letterorder: [usize; 26] = [0; 26];
 
     // TODO: Add error handling
     let begin: SystemTime = SystemTime::now();
+    let file: File = File::open("words_alpha.txt").unwrap();
+    let file: Mmap = unsafe { Mmap::map(&file).unwrap() };
     parkerrust::readwords(
+        &file,
         &mut bits_to_index,
         &mut index_to_bits,
         &mut index_to_word,
