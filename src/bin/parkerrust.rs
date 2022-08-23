@@ -3,6 +3,48 @@ use std::{collections::HashMap, fs::File, time::SystemTime};
 use memmap::Mmap;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
+fn findwords_parallel(
+    lettermask: &[u32; 26],
+    letter_to_words_bits: &[Vec<u32>; 26],
+    bits_to_index: &HashMap<u32, usize>,
+    index_to_word: &Vec<&[u8]>,
+) -> usize {
+    struct StartInfo {
+        totalbits: u32,
+        numwords: usize,
+        words: [usize; 5],
+        max_letter: usize,
+        skipped: i32,
+    }
+
+    let mut words: [usize; 5] = [0; 5];
+
+    // let (sender1, receiver1) = crossbeam::channel::unbounded::<u32>();
+    // let (sender2, receiver2) = crossbeam::channel::unbounded::<u32>();
+    // let (sender_output, receiver_output) = crossbeam::channel::unbounded::<u32>();
+
+    // let mut numwords: usize = 0;
+
+    // rayon::join(
+    //     || {
+    findwords(
+        lettermask,
+        letter_to_words_bits,
+        bits_to_index,
+        index_to_word,
+        0,
+        0,
+        &mut words,
+        0,
+        -1,
+    )
+    //     },
+    //     || {},
+    // );
+
+    // numwords
+}
+
 fn findwords(
     lettermask: &[u32; 26],
     letter_to_words_bits: &[Vec<u32>; 26],
@@ -138,18 +180,11 @@ fn main() {
 
     let mid: SystemTime = SystemTime::now();
 
-    let mut words: [usize; 5] = [0; 5];
-
-    let solutions: usize = findwords(
+    let solutions: usize = findwords_parallel(
         &lettermask,
         &letter_to_words_bits,
         &bits_to_index,
         &index_to_word,
-        0,
-        0,
-        &mut words,
-        0,
-        -1,
     );
 
     let process_time: u128 = mid.elapsed().unwrap().as_micros();
