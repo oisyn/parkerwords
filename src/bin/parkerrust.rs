@@ -7,7 +7,7 @@ fn findwords(
     letterorder: &[usize; 26],
     letter_to_words_bits: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
-    index_to_word: &Vec<&str>,
+    index_to_word: &Vec<&[u8]>,
 
     totalbits: usize,
     numwords: usize,
@@ -106,22 +106,23 @@ fn findwords(
     numsolutions
 }
 
-fn output(index_to_word: &Vec<&str>, words: &[usize; 5]) -> () {
+fn output(index_to_word: &Vec<&[u8]>, words: &[usize; 5]) -> () {
     // return;
-    println!(
+    let str = format!(
         "{} {} {} {} {}",
-        index_to_word[words[0]],
-        index_to_word[words[1]],
-        index_to_word[words[2]],
-        index_to_word[words[3]],
-        index_to_word[words[4]]
+        unsafe { std::str::from_utf8_unchecked(index_to_word[words[0]]) },
+        unsafe { std::str::from_utf8_unchecked(index_to_word[words[1]]) },
+        unsafe { std::str::from_utf8_unchecked(index_to_word[words[2]]) },
+        unsafe { std::str::from_utf8_unchecked(index_to_word[words[3]]) },
+        unsafe { std::str::from_utf8_unchecked(index_to_word[words[4]]) }
     );
+    println!("{}", str);
 }
 
 fn main() {
     let mut bits_to_index: HashMap<usize, usize> = HashMap::new();
     let mut index_to_bits: Vec<usize> = Vec::new();
-    let mut index_to_word: Vec<&str> = Vec::new();
+    let mut index_to_word: Vec<&[u8]> = Vec::new();
     let mut letter_to_words_bits: [Vec<usize>; 26] = Default::default();
     let mut letterorder: [usize; 26] = [0; 26];
 

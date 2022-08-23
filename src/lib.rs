@@ -8,7 +8,7 @@ pub fn readwords<'a>(
     file: &'a Mmap,
     bits_to_index: &mut HashMap<usize, usize>,
     index_to_bits: &mut Vec<usize>,
-    index_to_word: &mut Vec<&'a str>,
+    index_to_word: &mut Vec<&'a [u8]>,
     letter_to_words_bits: &mut [Vec<usize>; 26],
     letterorder: &mut [usize; 26],
     fixed_size: Option<usize>,
@@ -63,7 +63,7 @@ pub fn readwords<'a>(
 
         bits_to_index.insert(this_bits, index_to_bits.len());
         index_to_bits.push(this_bits);
-        index_to_word.push(unsafe { std::str::from_utf8_unchecked(&file[this_word_begin..i]) });
+        index_to_word.push(&file[this_word_begin..i]);
     }
 
     println!("{:5}us Ingested file", now.elapsed().unwrap().as_micros());
