@@ -65,7 +65,7 @@ pub fn readwords(
 
     println!("{:5}us Ingested file", now.elapsed().unwrap().as_micros());
 
-    // rearrange letter order based on lettter frequency (least used letter gets lowest index)
+    // rearrange letter order based on letter frequency (least used letter gets lowest index)
     freq.sort_by(|a, b| a.f.cmp(&b.f));
 
     let mut reverseletterorder: [usize; 26] = [0; 26];
