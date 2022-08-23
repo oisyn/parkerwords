@@ -5,7 +5,7 @@ use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 fn findwords(
     letterorder: &[usize; 26],
-    letterindexes: &[Vec<usize>; 26],
+    letter_to_words_bits: &[Vec<usize>; 26],
     bits_to_index: &HashMap<usize, usize>,
     index_to_word: &Vec<&str>,
 
@@ -36,7 +36,7 @@ fn findwords(
 
         // Use parallelism at the top level only
         if numwords == 0 || numwords == 1 {
-            numsolutions += letterindexes[i]
+            numsolutions += letter_to_words_bits[i]
                 .par_iter()
                 .map(|w| {
                     if totalbits & w != 0 {
@@ -47,7 +47,7 @@ fn findwords(
                         newwords[numwords] = idx;
                         findwords(
                             letterorder,
-                            letterindexes,
+                            letter_to_words_bits,
                             bits_to_index,
                             index_to_word,
                             totalbits | w,
@@ -65,7 +65,7 @@ fn findwords(
                 words[numwords] = *last_index;
                 numsolutions += findwords(
                     letterorder,
-                    letterindexes,
+                    letter_to_words_bits,
                     bits_to_index,
                     index_to_word,
                     totalbits | candidate,
@@ -76,7 +76,7 @@ fn findwords(
                 );
             }
         } else {
-            for w in letterindexes[i].iter() {
+            for w in letter_to_words_bits[i].iter() {
                 if totalbits & w != 0 {
                     continue;
                 }
@@ -85,7 +85,7 @@ fn findwords(
                 words[numwords] = idx;
                 numsolutions += findwords(
                     letterorder,
-                    letterindexes,
+                    letter_to_words_bits,
                     bits_to_index,
                     index_to_word,
                     totalbits | w,
@@ -122,7 +122,7 @@ fn main() {
     let mut bits_to_index: HashMap<usize, usize> = HashMap::new();
     let mut index_to_bits: Vec<usize> = Vec::new();
     let mut index_to_word: Vec<&str> = Vec::new();
-    let mut letterindexes: [Vec<usize>; 26] = Default::default();
+    let mut letter_to_words_bits: [Vec<usize>; 26] = Default::default();
     let mut letterorder: [usize; 26] = [0; 26];
 
     // TODO: Add error handling
@@ -134,7 +134,7 @@ fn main() {
         &mut bits_to_index,
         &mut index_to_bits,
         &mut index_to_word,
-        &mut letterindexes,
+        &mut letter_to_words_bits,
         &mut letterorder,
         Some(5),
     )
@@ -147,7 +147,7 @@ fn main() {
 
     let solutions: usize = findwords(
         &letterorder,
-        &letterindexes,
+        &letter_to_words_bits,
         &bits_to_index,
         &index_to_word,
         0,

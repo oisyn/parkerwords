@@ -9,7 +9,7 @@ pub fn readwords<'a>(
     bits_to_index: &mut HashMap<usize, usize>,
     index_to_bits: &mut Vec<usize>,
     index_to_word: &mut Vec<&'a str>,
-    letterindexes: &mut [Vec<usize>; 26],
+    letter_to_words_bits: &mut [Vec<usize>; 26],
     letterorder: &mut [usize; 26],
     fixed_size: Option<usize>,
 ) -> io::Result<()> {
@@ -89,7 +89,7 @@ pub fn readwords<'a>(
             m ^= 1 << letter;
         }
 
-        letterindexes[min].push(*w);
+        letter_to_words_bits[min].push(*w);
     }
 
     Ok(())
