@@ -12,7 +12,6 @@ pub fn readwords<'a>(
     letterorder: &mut [u8; 26],
     fixed_size: Option<usize>,
 ) -> io::Result<()> {
-    #[derive(Copy, Clone)]
     struct Frequency {
         pub count: u32,
         pub letter: u8,
