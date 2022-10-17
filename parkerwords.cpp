@@ -17,7 +17,11 @@
 #include <future>
 #include <condition_variable>
 #include <mutex>
+#ifdef __GNUC__
+#include <x86intrin.h>
+#else
 #include <intrin.h>
+#endif
 #include <emmintrin.h>
 
 constexpr int MaxThreads = 16;
@@ -97,7 +101,7 @@ void readwords(const char* file)
     in.seekg(0, std::ios::beg);
     in.read(&buf[0], chunksize);
 
-    volatile size_t nextChunk = chunksize;
+    std::atomic<size_t> nextChunk = chunksize;
 	auto doread = [&]()
 	{
 		in.read(&buf[nextChunk], chunksize);
