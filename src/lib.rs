@@ -29,7 +29,8 @@ pub fn readwords<'a>(
         let char = *char;
         // _technically_ this loop will not work for the last word
         // In practice the last word has a duplicate letter so we don't care
-        if char != '\n' as u8 {
+        // Check char is a letter
+        if char >= b'a' && char <= b'z' {
             bits |= 1 << (char as u32 - 'a' as u32);
             continue;
         }
